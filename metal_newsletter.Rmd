@@ -1,0 +1,199 @@
+---
+title: "**The relationship between gold and silver**"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+geometry: paperheight=11.69in, paperwidth=8.27in,margin=0.5in
+output: 
+  pdf_document:
+    latex_engine: xelatex
+header-includes:
+  - \usepackage{graphicx}
+  - \usepackage{floatrow}
+  - \floatsetup[figure]{capposition=top}
+  - \usepackage{fancyhdr}
+  - \usepackage{picture}   # Load picture package for \put command
+  - \usepackage{xcolor}    # Load xcolor package for color definitions
+  - \hyphenpenalty=10000
+  - \fancyhf{}  # Clear default header and footer
+  - \renewcommand{\headrule}{}  # Remove header rule
+  - \setlength\headheight{70pt}  # Adjust headheight as needed
+  - \fancypagestyle{plain}{} 
+  - \pagestyle{fancy} 
+  - \chead{
+        \begin{picture}(0,0)
+        \put(-300,-50){\includegraphics[width=22cm]{./01. static/m_newsletter-v2.png}}
+        \put(170,30){\textcolor{white}{\textbf{}}}
+        \put(180,20){\textcolor{white}{\textbf{}}}
+        \end{picture}
+    }  # Header content with image and email overlay
+---
+
+```{r setup, include=FALSE, echo=FALSE, warning=FALSE, comment=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Library
+library(quantmod)
+library(dplyr)
+library(ggplot2)
+library(GGally)
+
+# Define the tickers for gold and silver
+tickers <- c("GC=F", "SI=F")
+
+# Download historical data for closing prices only
+data <- lapply(tickers, function(ticker) {
+  getSymbols(ticker,
+             from = Sys.Date() - 6*365,  # 6 years before today's date
+             to = Sys.Date(),
+             periodicity = "daily",
+             auto.assign = FALSE)  # Do not auto-assign to environment
+})
+
+# Datasets
+gold_df = data[[1]]$`GC=F.Close`
+silver_df = data[[2]]$`SI=F.Close`
+
+# Merge datasets by Date column
+merged_df <- as.data.frame(cbind(gold_df, silver_df))
+names(merged_df) <- c('Gold','Silver')
+```
+
+## Introduction
+
+The commodities world holds a fascinating dynamic between gold and silver. These precious metals not only serve as industrial cornerstones but also function as **long-standing stores of value**. Historically, their prices have exhibited a **strong positive correlation**. However, the price range can differ significantly due to gold's higher density compared to silver, making it more valuable. As a result, one ounce of gold currently purchases roughly 80 ounces of silver.
+
+## Statistics are the pillars of modern civilization
+
+Correlation is a statistical measure that quantifies the **strength and direction of the relationship between two variables**. The most common measure is the Pearson correlation coefficient, developed by Karl Pearson. This coefficient reflects the strength and direction of a **linear association between two variables**. This coefficient ranges from -1 to 1. A value closer to **1 indicates a strong positive correlation**, meaning the variables tend to move in the same direction. Conversely, a value closer to **-1 suggests a strong negative correlation**, where the variables move in opposite directions. 
+
+Despite being a simple and powerful tool used in various circumstances, it's **important to understand its limitations**. This measure is effective in identifying **linear relationships**, where changes in one variable tend to be mirrored, positively or negatively, by changes in the other in a straight-line pattern. Importantly, it should be mentioned that **correlation analysis does not imply causation**, which often leads many analysts to misinterpret its results. Furthermore, there are many correlations that exhibit non-linear nature, making the Pearson correlation coefficient unsuitable for many situations.
+
+## "Correlation is not causation, but it sure is a hint." - Edward Tufte
+
+Now that we've clarified what correlation is, let's analyze the relationship between gold and silver prices over the past 6 years. We can extract data from the open-source package *quantmod* and use the *R* libraries *ggplot2* and *GGally* to start our analysis with the following charts: 
+
+```{r plot-chart1, echo=FALSE, fig.align='center', fig.cap='\\label{fig:fig1}Correlation Matrix', fig.height=3, message=FALSE, warning=FALSE, comment=FALSE}
+
+# Chart using ggpairs()
+ggpairs(merged_df, 
+        lower = list(continuous = wrap("points", color = "darkblue", alpha = 0.6)),
+        upper = list(continuous = wrap("cor", corSize = 3)),
+        diag = list(continuous = wrap("densityDiag", fill = "darkgray")))
+```
+\newpage
+\hfill\break
+
+The initial scatter plot suggests a **positive linear trend between the two variables**. This is further confirmed by the Pearson correlation coefficient of **0.876**, indicating a very strong positive correlation. However, one of the most interesting results from the chart is the **bimodal distribution of silver**, suggesting that in recent years the price dynamics of this precious metal have resulted in the formation of two distinct modes, something not observed in gold. This is likely the result of silver's role not only as a store of value but also in industrial uses, **heavily influenced by the monetary tightening** observed since 2022. **Gold**, in contrast, is used in relatively few industries (around 12% for industrial applications). This results in **its price being more influenced by jewelry and investment demand**, leading to a unimodal pattern.
+
+## "Investors view gold as a safe haven during times of economic uncertainty."
+
+Even though **gold and silver exhibit a correlation**, the unique market fundamentals for each **precious metal present distinct investment opportunities**. This is evident when we observe their prices over the past six years. The shaded area highlights periods where their dynamics diverge. 
+
+For example, at the beginning of the pandemic, **significant market uncertainty** caused a sudden **halt in industrial activity**. This resulted in **lower demand for silver**, while gold's price increased. This episode exemplifies how different factors can influence each metal's price despite their overall correlation. On the other hand, the prospect of US interest rate cuts in late 2023, which later proved unfounded, provided an opportunity for silver to appreciate. However, silver prices fell again due to **persistent inflationary pressures** in the world's largest economy, while **gold gained more market interest amid a risk-averse environment**.
+
+
+```{r plot-chart2, echo=FALSE, warning=FALSE,comment=FALSE, message=FALSE, fig.align='center', fig.cap="\\label{fig:fig2}Gold and Silver Prices", fig.height=3}
+# Scatter Plot
+merged_df$Date <- as.Date(row.names(merged_df))
+scale_factor = 70
+
+# Stylish colors
+gold_color <- "#FFC107"  # Amber
+silver_color <- "#607D8B"  # Blue Grey
+shade_color <- "#CFA7D6"
+
+shaded_start_2020 <- as.Date("2020-03-01")
+shaded_end_2020 <- as.Date("2020-05-31")
+
+shaded_start_2023 <- as.Date("2022-12-10")
+shaded_end_2023 <- as.Date("2023-02-01")
+
+# Assuming merged_df is your data frame containing Date, Gold, and Silver columns
+ggplot(merged_df, aes(x=Date)) +
+  # First y-axis (Gold)
+  geom_line(aes(y=Gold, color = "Gold")) + 
+  # Second y-axis (Silver)
+  geom_line(aes(y=Silver * scale_factor, color = "Silver")) +
+  # Shaded area for specific months
+  geom_rect(
+    xmin = shaded_start_2020, xmax = shaded_end_2020,
+    ymin = -Inf, ymax = Inf, fill = shade_color, alpha = 0.01,
+    color = NA
+  ) +
+  geom_rect(
+    xmin = shaded_start_2023, xmax = shaded_end_2023,
+    ymin = -Inf, ymax = Inf, fill = shade_color, alpha = 0.01,
+    color = NA
+  ) +
+  # Scale for the primary y-axis (Gold)
+  scale_y_continuous(
+    name = "Gold (USD/Oz.)",
+    # Adding secondary axis
+    sec.axis = sec_axis(~./scale_factor, name="Silver (USD/Oz.)")
+  ) +
+  # Add labels and color legend
+  labs(
+    x = "Date",
+    color = " "
+  ) +
+  # Set stylish colors for the lines
+  scale_color_manual(values = c("Gold" = gold_color, "Silver" = silver_color)) +
+  # Improve theme for better readability
+  theme_minimal() +
+  theme(
+    axis.title.y.left = element_text(color = 'black'),
+    axis.title.y.right = element_text(color = "black"),
+    legend.position = "bottom"
+  )
+```
+
+# Summary
+
+- Correlation is a statistical measure quantifying the strength and direction of the relationship between two variables. 
+- The Pearson correlation coefficient, developed by Karl Pearson, is the most common measure, but it has limitations that should be considered in any analysis.
+- While gold and silver exhibit correlation, their distinct market fundamentals affect their prices differently, creating interesting opportunities for attentive analysts.
+- In late 2023, expectations of US interest rate cuts, which ultimately did not occur, created an environment conducive to silver appreciation, driven by reliance on industrial activity.
+- In contrast, gold gained more market interest amid a risk-averse environment characterized by persistent inflation and higher interest rates.
+
+\newpage
+\hfill\break
+
+## Literary Passage: Smaug and the Treasure
+
+One of the coolest ways to learn about new things is to associate the content with literary themes. So, here's a passage on the subject we discussed today.
+
+*"Now Smaug lay on a floor of precious stones, from which the two strong men could see it lying in the night. Here and there the light of the burning rocks showed through his limbs, and struck thence into his flanks; and when he twisted to try and allay the pain, he could hardly move, and made a terrible creaking noise. He had a small patch on the lower part of his back which was still hot, and he could feel his legs growing a little longer as the hot stones warmed up his wings; and they knew that he could not have come from a place where there was nothing left of his original house."*
+
+\- "The Hobbit" by J.R.R. Tolkien
+
+# More about the author
+
+\noindent
+\begin{minipage}[t]{0.4\textwidth}
+  \centering
+  \raisebox{\dimexpr \topskip-\height}{%
+    \includegraphics[width=\textwidth]{./01. static/profile_img.jpeg}%
+  }
+\end{minipage}
+\hspace{0.5cm} 
+\begin{minipage}[t]{0.55\textwidth}
+As an economist and statistician with a passion for data-driven decision-making, I bring a proven track record in leveraging quantitative analysis to drive strategic insights and solutions. I currently work as an energy and macroeconomics analyst, and in my spare time, I enjoy studying metals, programming, and economics.
+
+\vspace{0.45cm} 
+
+\begin{itemize}
+  \item Applying advanced statistical methods and econometric models to interpret complex data sets.
+  \item Developing forecasting models and conducting market research to anticipate economic trends.
+  \item Collaborating with cross-functional teams to optimize business processes and enhance financial performance.
+  \item Communicating findings and recommendations to stakeholders at all organizational levels.
+  \item Adapting swiftly to evolving market conditions and regulatory environments.
+\end{itemize}
+
+\end{minipage}
+
+\hspace{4cm} 
+
+# Disclaimer
+
+This newsletter/document is intended solely for educational purposes and should not be construed as financial or market analysis or advice. The information provided herein is for informational and data programming purposes only. Any views expressed regarding specific commodities, including metals, are based on available data and independent analysis. This document is not related to any company or professional purposes. It does not constitute a recommendation to buy, sell, or hold any financial instrument. Readers are encouraged to conduct their own research and analysis or consult with a qualified financial advisor before making any investment decisions. Past performance is not necessarily indicative of future results. The author(s) and publisher of this newsletter/document are not liable for any errors, omissions, or losses incurred as a result of using this information.
+
+
